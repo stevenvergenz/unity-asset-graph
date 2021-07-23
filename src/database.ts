@@ -1,5 +1,6 @@
 import { readFile, stat, writeFile } from 'fs/promises';
 import { findFiles, getId, getDependencies } from './fsUtils';
+import { resolve } from 'path';
 
 export class Asset {
 	public db: Database;
@@ -27,25 +28,54 @@ export class Database {
 
 	public async extract(projectPath: string): Promise<void> {
 		this.assets = {};
+		projectPath = resolve(projectPath);
 
-		const metaFiles = await findFiles(projectPath, /\.meta$/);
-		console.log("Found files:", metaFiles);
+		// populate database
+		const metaFiles = await findFiles(projectPath, /\.meta$/, /^Library/, Infinity, projectPath.length + 1);
 		for (const meta of metaFiles) {
 			const id = await getId(meta);
 			const name = meta.substr(0, meta.length - 5);
-			const size = (await stat(name)).size;
-			console.log("getting dependencies of:", name);
+			const displayName = name.substr(projectPath.length + 1).replace(/\\/g, "/");
 			const deps = await getDependencies(name);
-			this.assets[id] = new Asset(this, id, name, size, deps);
+
+			const stats = await stat(name);
+			if (stats.isFile()) {
+				this.assets[id] = new Asset(this, id, displayName, stats.size, deps);
+			}
+		}
+
+		// clean out unresolved dependencies
+		for (const asset of Object.values(this.assets)) {
+			asset.dependencies = asset.dependencies.filter(a => this.assets[a]);
 		}
 	}
 
 	public save(outputPath: string): Promise<void> {
-		return writeFile(outputPath, JSON.stringify(this));
+		return writeFile(outputPath, JSON.stringify(this, null, '\t'));
 	}
 
 	public async load(savedPath: string): Promise<void> {
 		const readData = await readFile(savedPath, { encoding: 'utf-8' });
-		this.assets = JSON.parse(readData);
+		this.assets = JSON.parse(readData).assets;
+	}
+
+	public findByName(name: string): Asset {
+		return Object.values(this.assets).find(a => a.name === name);
+	}
+
+	public formatDependencies(asset: Asset, indent = 0): string {
+		if (!asset) {
+			return "null asset";
+		}
+
+		let indentStr = "";
+		if (indent > 0) {
+			indentStr = "  ".repeat(indent - 1) + " \u2515 ";
+		}
+
+		return [indentStr + asset.name, ...asset.dependencies.map(id =>
+			this.formatDependencies(this.assets[id], indent + 1))]
+			.join("\n");
+
 	}
 }
