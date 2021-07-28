@@ -10,11 +10,13 @@
   "author": "Steven Vergenz",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "yaml": "^1.10.2"
+    "d3": "^7.0.0",
+    "d3-force": "^3.0.0"
   },
   "devDependencies": {
+    "@types/d3": "^7.0.0",
+    "@types/d3-force": "^3.0.3",
     "@types/node": "^16.4.0",
-    "@types/yaml": "^1.9.7",
     "typescript": "^4.1.3"
   }
 }

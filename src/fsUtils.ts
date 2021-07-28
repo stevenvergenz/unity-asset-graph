@@ -54,7 +54,6 @@ export async function getId(assetMetaPath: string): Promise<string> {
 }
 
 export async function getDependencies(assetPath: string): Promise<string[]> {
-
 	// scan for IDs
 	if (/\.(mat|asset|unity|prefab)$/.test(assetPath)) {
 		const dataString = await readFile(assetPath, { encoding: 'utf-8' });
