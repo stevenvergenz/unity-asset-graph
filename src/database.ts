@@ -2,7 +2,7 @@ import { readFile, stat, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 import { SimulationNodeDatum } from 'd3-force';
 
-import { findFiles, getId, getDependencies } from './fsUtils';
+import { findFiles, getId, getDependencies } from './fsUtils.js';
 
 export class Asset implements SimulationNodeDatum {
 	public db: Database;

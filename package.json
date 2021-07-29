@@ -10,12 +10,14 @@
   "author": "Steven Vergenz",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "d3": "^7.0.0",
-    "d3-force": "^3.0.0"
+    "d3": "^6.7.0",
+    "d3-force": "^2.1.1",
+    "jsdom": "^16.6.0"
   },
   "devDependencies": {
-    "@types/d3": "^7.0.0",
-    "@types/d3-force": "^3.0.3",
+    "@types/d3": "^6.7.5",
+    "@types/d3-force": "^2.1.4",
+    "@types/jsdom": "^16.2.13",
     "@types/node": "^16.4.0",
     "typescript": "^4.1.3"
   }

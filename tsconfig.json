@@ -4,7 +4,7 @@
 		"target": "ES2019",
 		"lib": ["ES2019", "DOM"],
 		"outDir": "built",
-		"esModuleInterop": true,
+		"esModuleInterop": false,
 		"sourceMap": true,
 		"moduleResolution": "node",
 		"module": "commonjs"
