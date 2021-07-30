@@ -26,8 +26,8 @@ async function main(argv: string[]): Promise<void> {
 		await db.load(arg1)
 
 		const svg = visualize(db, 1920, 1080);
-		await writeFile(arg2, svg.html());
-		exec(`open "${arg2}"`);
+		await writeFile(arg2, svg.outerHTML);
+		exec(`open "file:${process.cwd()}}/${arg2}"`);
 	}
 }
 

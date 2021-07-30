@@ -1,8 +1,26 @@
+import { extname } from 'path';
 import * as d3 from 'd3';
 import * as d3f from 'd3-force';
 import { JSDOM } from 'jsdom';
 
 import { Asset, Database } from './database.js';
+
+const assetTypeColors: { [assetType: string]: string } = {
+	".shader": "purple",
+	".png": "blue",
+	".jpg": "blue",
+	".exr": "blue",
+	".mp4": "blue",
+	".mat": "green",
+	".blend": "gold",
+	".fbx": "gold",
+	".obj": "gold",
+	".prefab": "cyan",
+	".unity": "pink",
+	".asset": "grey",
+	".giparams": "grey",
+	".lighting": "grey"
+};
 
 export function visualize(db: Database, width = 1920, height = 1080) {
 	const data = generateSimData(db);
@@ -16,18 +34,37 @@ export function visualize(db: Database, width = 1920, height = 1080) {
 		sim.tick();
 	}
 
-	const doc = new JSDOM("<body></body>");
+	const doc = new JSDOM(`
+	<!DOCTYPE html>
+	<body>
+		<svg viewBox="0 0 ${width} ${height}">
+			<defs>
+				<marker id="triangle" viewBox="0 0 4 4"
+					refX="7" refY="2"
+					markerUnits="strokeWidth"
+					markerWidth="4" markerHeight="4"
+					orient="auto">
+					<path d="M 0 0 L 4 2 L 0 4 z" fill="#999"/>
+				</marker>
+			</defs>
+		</svg>
+	</body>
+	`);
 	const body = d3.select(doc.window.document.body)
-	const svg = body.append("svg")
-		.attr("viewBox", `0 0 ${width} ${height}`);
+	const svg = body.select("svg");
 
 	svg.append("g")
 		.attr("stroke", "#999")
 		.attr("stroke-opacity", 0.6)
 		.attr("stroke-width", 2)
+		.attr("marker-end", "url(#triangle)")
 		.selectAll("line")
 		.data(data.links)
-		.join("line");
+		.join("line")
+		.attr("x1", d => (d.source as Asset).x)
+		.attr("y1", d => (d.source as Asset).y)
+		.attr("x2", d => (d.target as Asset).x)
+		.attr("y2", d => (d.target as Asset).y);
 
 	svg.append("g")
 		.attr("stroke", "#fff")
@@ -35,10 +72,14 @@ export function visualize(db: Database, width = 1920, height = 1080) {
 		.selectAll("circle")
 		.data(data.nodes)
 		.join("circle")
-		.attr("r", 5)
-		.attr("fill", "#555");
+		.attr("r", 7)
+		.attr("fill", d => assetTypeColors[extname(d.name)] ?? "black")
+		.attr("cx", d => d.x)
+		.attr("cy", d => d.y)
+		.append("title")
+		.text(d => d.name);
 
-	return body;
+	return doc.window.document.documentElement;
 }
 
 function generateSimData(db: Database): { nodes: Asset[], links: d3f.SimulationLinkDatum<Asset>[] } {
