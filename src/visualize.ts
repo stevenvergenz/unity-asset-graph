@@ -24,7 +24,7 @@ const assetTypeColors: { [assetType: string]: string } = {
 
 export function visualize(db: Database, screenRatio = 1) {
 	const dbSize = Object.keys(db.assets).length;
-	const height = 1.3 * dbSize, width = height * screenRatio;
+	const height = Math.ceil(85 * Math.sqrt(dbSize)), width = height * screenRatio;
 
 	const data = generateSimData(db);
 	const sim = d3f.forceSimulation(data.nodes)
