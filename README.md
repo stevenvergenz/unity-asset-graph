@@ -3,7 +3,7 @@ unity-asset-graph
 
 Track and visualize dependencies between Unity assets
 
-![demo.svg](demo.svg)
+<object alt="demo.svg" data="demo.svg" type="image/svg+xml"></object>
 
 Setup
 ------
