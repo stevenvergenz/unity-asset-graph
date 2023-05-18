@@ -1,14 +1,21 @@
 import { readFile, stat, writeFile } from 'fs/promises';
-import { findFiles, getId, getDependencies } from './fsUtils';
 import { resolve } from 'path';
+import { SimulationNodeDatum } from 'd3-force';
 
-export class Asset {
+import { findFiles, getId, getDependencies } from './fsUtils';
+
+export class Asset implements SimulationNodeDatum {
 	public db: Database;
 
 	public id: string;
 	public name: string;
 	public assetSize: number;
 	public dependencies: string[];
+
+	public x = 0;
+	public y = 0;
+	public vx = 0;
+	public vy = 0;
 
 	public constructor(db: Database, id: string, name: string, assetSize: number = 0, dependencies: string[] = []) {
 		this.db = db;
