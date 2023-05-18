@@ -1,18 +1,24 @@
-import { writeFile } from 'fs/promises';
-
 import { Database } from './database';
 
-const argBase = process.argv.indexOf(__filename);
-console.log(`argBase: ${argBase}`);
-const command = process.argv[argBase + 1];
+async function main(argv: string[]): Promise<void> {
+	const command = argv[0];
 
-if (command === "extract"){
-	const db = new Database();
-	db.extract(process.argv[argBase + 2])
-	.then(() => db.save(process.argv[argBase + 3]))
-	.catch((err: Error) => console.error(err));
+	if (command === "extract"){
+		const db = new Database();
+		await db.extract(argv[1]);
+		await db.save(argv[2]);
+	}
+	else if (command === "query") {
+		const db = new Database();
+		await db.load(argv[1]);
+
+		const subc = argv[2];
+		if (subc == "dependencies") {
+			console.log(db.formatDependencies(db.findByName(argv[3])));
+		}
+	}
 }
-else if (command === "query") {
-	const db = new Database();
-	db.load(process.argv[argBase + 2]);
-}
+
+const argBase = process.argv.indexOf(__filename);
+main(process.argv.slice(argBase + 1))
+.catch(err => console.error(err));

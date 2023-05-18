@@ -4,26 +4,43 @@ import { resolve } from 'path';
 const metaIdRegex = /guid: ([0-9a-f]{32})/;
 const idRegex = /[0-9a-f]{32}/g;
 
-export async function findFiles(dir: string, pattern: RegExp, maxDepth: number = Infinity): Promise<string[]> {
-	// if we're passed a single file, just return if it matches
-	const dirStats = await stat(dir);
-	if (!dirStats.isDirectory()) {
-		if (pattern.test(dir)) {
-			return [ dir ];
-		} else {
-			return [];
-		}
+export async function findFiles(
+	dir: string,
+	include: RegExp,
+	exclude: RegExp = null,
+	maxDepth: number = Infinity,
+	matchStartIndex: number = 0
+): Promise<string[]> {
+	if (include) {
+		include.lastIndex = 0;
+	}
+	if (exclude) {
+		exclude.lastIndex = 0;
 	}
 
-	if (maxDepth <= 0) {
+	const searchStr = dir.substr(matchStartIndex);
+
+	// if we're passed a single file and it passes filter, return it
+	const dirStats = await stat(dir);
+	if (!dirStats.isDirectory() && (!include || include.test(searchStr)) && (!exclude || !exclude.test(searchStr))) {
+		return [ dir ];
+	}
+	// it's a directory, but we're maxed out on depth
+	else if (dirStats.isDirectory() && maxDepth <= 0) {
 		return [];
 	}
-
-	// get recursive files
-	const subFiles = await readdir(dir);
-	const subPromises = subFiles.map(f => findFiles(resolve(dir, f), pattern, maxDepth - 1));
-	const subResults = await Promise.all(subPromises);
-	return subResults.flat();
+	// it's a directory that passes the exclude filter, recurse
+	else if (dirStats.isDirectory() && (!exclude || !exclude.test(searchStr))) {
+		const subFiles = await readdir(dir);
+		const subPromises = subFiles.map(f =>
+			findFiles(resolve(dir, f), include, exclude, maxDepth - 1, matchStartIndex));
+		const subResults = await Promise.all(subPromises);
+		return subResults.flat();
+	}
+	// it's something that failed the filter, return empty
+	else {
+		return [];
+	}
 }
 
 export async function getId(assetMetaPath: string): Promise<string> {
@@ -44,12 +61,12 @@ export async function getDependencies(assetPath: string): Promise<string[]> {
 		idRegex.lastIndex = 0;
 
 		let match: string[];
-		let ids: string[] = [];
+		let ids = new Set<string>();
 		while (match = idRegex.exec(dataString)) {
-			ids.push(match[0]);
+			ids.add(match[0]);
 		}
 
-		return ids;
+		return [...ids];
 	}
 	else {
 		return [];
