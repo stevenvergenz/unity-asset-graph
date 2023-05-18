@@ -1,5 +1,6 @@
 import { readdir, readFile, stat } from 'fs/promises';
 import { resolve } from 'path';
+import { Database } from './database';
 
 const metaIdRegex = /guid: ([0-9a-f]{32})/;
 const idRegex = /[0-9a-f]{32}/g;
@@ -53,9 +54,9 @@ export async function getId(assetMetaPath: string): Promise<string> {
 	}
 }
 
-export async function getDependencies(assetPath: string): Promise<string[]> {
+export async function getDependencies(assetPath: string, db: Database): Promise<string[]> {
 	// scan for IDs
-	if (/\.(mat|asset|unity|prefab)$/.test(assetPath)) {
+	if (/\.(mat|asset|unity|prefab|lighting)$/.test(assetPath)) {
 		const dataString = await readFile(assetPath, { encoding: 'utf-8' });
 		idRegex.lastIndex = 0;
 
@@ -66,6 +67,16 @@ export async function getDependencies(assetPath: string): Promise<string[]> {
 		}
 
 		return [...ids];
+	}
+	else if (/Assets[\\\/]AltspaceUploader[\\\/](kits|space_templates).json$/.test(assetPath)) {
+		const data = await readFile(assetPath, { encoding: 'utf-8' });
+		const json = JSON.parse(data);
+		const assets: string[] = json.uploadEntries
+			.map(e => e.UploadItems).flat()
+			.map(i => Object.values(db.assets)
+				.find(a => a.path === resolve(db.projectPath, i.PrefabFilepath)))
+			.map(a => a?.id);
+		return assets;
 	}
 	else {
 		return [];

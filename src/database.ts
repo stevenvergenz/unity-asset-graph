@@ -9,6 +9,7 @@ export class Asset implements SimulationNodeDatum {
 
 	public id: string;
 	public name: string;
+	public path: string;
 	public assetSize: number;
 	public dependencies: string[];
 
@@ -17,38 +18,45 @@ export class Asset implements SimulationNodeDatum {
 	public vx = 0;
 	public vy = 0;
 
-	public constructor(db: Database, id: string, name: string, assetSize: number = 0, dependencies: string[] = []) {
+	public constructor(db: Database, id: string, name: string, path: string, assetSize: number = 0,
+		dependencies: string[] = []) {
 		this.db = db;
 		this.id = id;
 		this.name = name;
+		this.path = path;
 		this.assetSize = assetSize;
 		this.dependencies = dependencies;
 	}
 
 	public toJSON(): any {
-		return { id: this.id, name: this.name, assetSize: this.assetSize, dependencies: this.dependencies };
+		return { id: this.id, name: this.name, path: this.path, assetSize: this.assetSize,
+			dependencies: this.dependencies };
 	}
 }
 
 export class Database {
+	public projectPath: string;
 	public assets: { [id: string]: Asset } = {};
 
 	public async extract(projectPath: string): Promise<void> {
+		this.projectPath = resolve(projectPath);
 		this.assets = {};
-		projectPath = resolve(projectPath);
 
 		// populate database
-		const metaFiles = await findFiles(projectPath, /\.meta$/, /^Library/, Infinity, projectPath.length + 1);
+		const metaFiles = await findFiles(this.projectPath, /\.meta$/, /^Library/, Infinity, this.projectPath.length + 1);
 		for (const meta of metaFiles) {
 			const id = await getId(meta);
-			const name = meta.substr(0, meta.length - 5);
-			const displayName = name.substr(projectPath.length + 1).replace(/\\/g, "/");
-			const deps = await getDependencies(name);
-
-			const stats = await stat(name);
+			const path = meta.substr(0, meta.length - 5);
+			const displayName = path.substr(this.projectPath.length + 1).replace(/\\/g, "/");
+			const stats = await stat(path);
 			if (stats.isFile()) {
-				this.assets[id] = new Asset(this, id, displayName, stats.size, deps);
+				this.assets[id] = new Asset(this, id, displayName, path, stats.size);
 			}
+		}
+
+		// populate dependencies
+		for (const asset of Object.values(this.assets)) {
+			asset.dependencies = await getDependencies(asset.path, this);
 		}
 
 		// clean out unresolved dependencies
@@ -63,7 +71,9 @@ export class Database {
 
 	public async load(savedPath: string): Promise<void> {
 		const readData = await readFile(savedPath, { encoding: 'utf-8' });
-		this.assets = JSON.parse(readData).assets;
+		const json = JSON.parse(readData);
+		this.projectPath = json.projectPath;
+		this.assets = json.assets;
 	}
 
 	public findByName(name: string): Asset {
