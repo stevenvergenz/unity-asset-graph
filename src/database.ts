@@ -43,7 +43,7 @@ export class Database {
 		this.assets = {};
 
 		// populate database
-		const metaFiles = await findFiles(this.projectPath, /\.meta$/, /^Library/, Infinity, this.projectPath.length + 1);
+		const metaFiles = await findFiles(this.projectPath, /^(Assets|ProjectSettings)[\\\/].*\.meta$/, /\.cs\.meta$/, Infinity, this.projectPath.length + 1);
 		for (const meta of metaFiles) {
 			const id = await getId(meta);
 			const path = meta.substr(0, meta.length - 5);
@@ -93,6 +93,5 @@ export class Database {
 		return [indentStr + asset.name, ...asset.dependencies.map(id =>
 			this.formatDependencies(this.assets[id], indent + 1))]
 			.join("\n");
-
 	}
 }

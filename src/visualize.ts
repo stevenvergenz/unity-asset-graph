@@ -22,7 +22,10 @@ const assetTypeColors: { [assetType: string]: string } = {
 	".lighting": "grey"
 };
 
-export function visualize(db: Database, width = 1920, height = 1080) {
+export function visualize(db: Database, screenRatio = 1) {
+	const dbSize = Object.keys(db.assets).length;
+	const height = 1.3 * dbSize, width = height * screenRatio;
+
 	const data = generateSimData(db);
 	const sim = d3f.forceSimulation(data.nodes)
 		.force("links", d3f.forceLink(data.links).id((a: Asset) => a.id))
@@ -37,7 +40,7 @@ export function visualize(db: Database, width = 1920, height = 1080) {
 	const doc = new JSDOM(`
 	<!DOCTYPE html>
 	<body>
-		<svg viewBox="0 0 ${width} ${height}">
+		<svg viewBox="0 0 ${width} ${height}" style="width: ${width}; height: ${height};">
 			<defs>
 				<marker id="triangle" viewBox="0 0 4 4"
 					refX="7" refY="2"
