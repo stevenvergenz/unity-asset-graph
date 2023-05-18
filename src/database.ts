@@ -42,12 +42,24 @@ export class Database {
 		this.projectPath = resolve(projectPath);
 		this.assets = {};
 
+		// filter out Unity root folders with no assets
+		let includeRegex: RegExp;
+		const assetsInfo = await stat(resolve(this.projectPath, 'Assets'));
+		const projectSettingsInfo = await stat(resolve(this.projectPath, 'ProjectSettings'));
+		if (assetsInfo?.isDirectory && projectSettingsInfo?.isDirectory) {
+			includeRegex = /^(Assets|ProjectSettings)[\\\/].*\.meta$/;
+		}
+		else {
+			includeRegex = /\.meta$/;
+		}
+
 		// populate database
-		const metaFiles = await findFiles(this.projectPath, /^(Assets|ProjectSettings)[\\\/].*\.meta$/, /\.cs\.meta$/, Infinity, this.projectPath.length + 1);
+		const metaFiles = await findFiles(this.projectPath, includeRegex, null, Infinity, this.projectPath.length + 1);
+		console.log(`Found ${metaFiles.length} asset files`);
 		for (const meta of metaFiles) {
 			const id = await getId(meta);
-			const path = meta.substr(0, meta.length - 5);
-			const displayName = path.substr(this.projectPath.length + 1).replace(/\\/g, "/");
+			const path = meta.substring(0, meta.length - 5);
+			const displayName = path.substring(this.projectPath.length + 1).replace(/\\/g, "/");
 			const stats = await stat(path);
 			if (stats.isFile()) {
 				this.assets[id] = new Asset(this, id, displayName, path, stats.size);

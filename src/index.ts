@@ -20,6 +20,18 @@ async function main(argv: string[]): Promise<void> {
 		if (subc == "dependencies") {
 			console.log(db.formatDependencies(db.findByName(arg3)));
 		}
+		else if (subc === "orphans") {
+			const orphans = new Set(Object.keys(db.assets));
+			for (const a of Object.values(db.assets)) {
+				for (const dep of a.dependencies) {
+					orphans.delete(dep);
+				}
+			}
+
+			for (const orphan of orphans) {
+				console.log(db.assets[orphan].name);
+			}
+		}
 	}
 	else if (command === "visualize") {
 		const db = new Database();

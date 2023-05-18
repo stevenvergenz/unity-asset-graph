@@ -89,11 +89,31 @@ function generateSimData(db: Database): { nodes: Asset[], links: d3f.SimulationL
 	const nodes: Asset[] = [];
 	const links: d3f.SimulationLinkDatum<Asset>[] = [];
 
-	for (const asset of Object.values(db.assets)) {
+	/*
+	// show only assets used by this asset
+	const assetsToShow = ["623e401d230801c409cb87c9fcb0680a"];
+	while (assetsToShow.length > 0) {
+		const asset = db.assets[assetsToShow.pop()];
 		nodes.push(asset);
+
 		for (const dep of asset.dependencies) {
 			links.push({ source: asset.id, target: dep });
+			if (nodes.findIndex(n => n.id === dep) === -1) {
+				assetsToShow.push(dep);
+			}
 		}
+	}
+	*/
+
+	for (const asset of Object.values(db.assets)) {
+		//if (asset.name.endsWith(".prefab")) {
+			nodes.push(asset);
+			for (const dep of asset.dependencies) {
+		//		if (db.assets[dep].name.endsWith(".prefab")) {
+					links.push({ source: asset.id, target: dep });
+		//		}
+			}
+		//}
 	}
 
 	return { nodes, links };
